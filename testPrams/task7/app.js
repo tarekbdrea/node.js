@@ -13,75 +13,60 @@ app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 
-// A. Return all users
+// Return all users
 app.get('/api/users', (req, res) => {
     res.json(users);
 });
 
-// B. Filter users by age
+// Filter users by age
 app.get('/api/users/filter', (req, res) => {
+    const min = req.query.minAge ? Number(req.query.minAge) : 0;
+    const max = req.query.maxAge ? Number(req.query.maxAge) : Infinity;
 
-    console.log(req.query);
-
-    const { minAge, maxAge } = req.query;
-    let sortedUsers = [...users];
-
-    if (minAge) {
-        sortedUsers = sortedUsers.filter(user => {
-            return user.age >= Number(minAge);
-        });
+    if (Number.isNaN(min) || Number.isNaN(max)) {
+        return res.status(400).send('Age must be a number');
     }
 
-    if (maxAge) {
-        sortedUsers = sortedUsers.filter(user => {
-            return user.age <= Number(maxAge);
-        });
+    if (min > max) {
+        return res.status(400).send('Invalid age range');
     }
 
-    return res.json(sortedUsers);
+    const sortedUsers = users.filter(user => {
+        return user.age >= min && user.age <= max;
+    });
+
+    res.json(sortedUsers);
 });
 
-// C. Find a specific user by ID
+// Return user by ID
 app.get('/api/users/:id', (req, res) => {
-
     const { id } = req.params;
 
-    const user1 = users.find(user => {
-        return user.id === Number(id);
-    });
+    const user = users.find(u => u.id === Number(id));
 
-    if (!user1) {
-        return res.status(404).send('User Does Not Exist');
+    if (!user) {
+        return res.status(404).send('User not found');
     }
 
-    return res.json(user1);
+    res.json(user);
 });
 
-// D. Display user details in HTML
+// Display user in HTML
 app.get('/user/:id', (req, res) => {
-
     const { id } = req.params;
 
-    const user1 = users.find(user => {
-        return user.id === Number(id);
-    });
+    const user = users.find(u => u.id === Number(id));
 
-    if (!user1) {
-        return res.status(404).send('User Does Not Exist');
+    if (!user) {
+        return res.status(404).send('User not found');
     }
 
-    return res.send(`
-        <html>
-            <head>
-                <title>User Details</title>
-            </head>
-            <body>
-                <h1>${user1.name}</h1>
-                <p>ID: ${user1.id}</p>
-                <p>Email: ${user1.email}</p>
-                <p>Age: ${user1.age}</p>
-            </body>
-        </html>
+    res.send(`
+        <h1>User Details</h1>
+        <p>ID: ${user.id}</p>
+        <p>Name: ${user.name}</p>
+        <p>Email: ${user.email}</p>
+        <p>Age: ${user.age}</p>
     `);
 });
 
