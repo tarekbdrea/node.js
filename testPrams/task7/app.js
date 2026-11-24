@@ -5,20 +5,26 @@ Muhamad Zubedat
 */
 
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
 const app = express();
 const port = process.env.PORT || 3000;
 const users = require('./users.json');
+
+const userTemplate = fs.readFileSync(
+    path.join(__dirname, 'templates', 'user.html'),
+    'utf8'
+);
 
 app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 
-// Return all users
 app.get('/api/users', (req, res) => {
     res.json(users);
 });
 
-// Filter users by age
 app.get('/api/users/filter', (req, res) => {
     const min = req.query.minAge ? Number(req.query.minAge) : 0;
     const max = req.query.maxAge ? Number(req.query.maxAge) : Infinity;
@@ -38,7 +44,6 @@ app.get('/api/users/filter', (req, res) => {
     res.json(sortedUsers);
 });
 
-// Return user by ID
 app.get('/api/users/:id', (req, res) => {
     const { id } = req.params;
 
@@ -51,7 +56,6 @@ app.get('/api/users/:id', (req, res) => {
     res.json(user);
 });
 
-// Display user in HTML
 app.get('/user/:id', (req, res) => {
     const { id } = req.params;
 
@@ -61,13 +65,13 @@ app.get('/user/:id', (req, res) => {
         return res.status(404).send('User not found');
     }
 
-    res.send(`
-        <h1>User Details</h1>
-        <p>ID: ${user.id}</p>
-        <p>Name: ${user.name}</p>
-        <p>Email: ${user.email}</p>
-        <p>Age: ${user.age}</p>
-    `);
+    const html = userTemplate
+        .replaceAll('{{id}}', user.id)
+        .replaceAll('{{name}}', user.name)
+        .replaceAll('{{email}}', user.email)
+        .replaceAll('{{age}}', user.age);
+
+    res.send(html);
 });
 
 app.listen(port, () => {
